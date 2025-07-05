@@ -15,6 +15,7 @@ fn quit_event_handler(
     _tab_index: &mut TabIndex,
     _components: &mut DeferredComponents,
 ) -> Option<Event> {
+    _components.by_name("input")
     match ev {
         Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
@@ -51,7 +52,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ModelPickerState::new()?,
         )
         .unwrap();
-    builder.prototype("inptu", "templates/input.aml", Input::new, InputState::new)
+
+    builder.prototype("input", "templates/input.aml", Input::new, InputState::new)?;
     builder
         .finish(&mut backend, |mut rt, backend| rt.run(backend))
         .unwrap();
