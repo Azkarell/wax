@@ -1,0 +1,15 @@
+align [alignment: "top-left"]
+	vstack [foreground: "white"]
+		@input  
+		vstack [foreground: "yellow"]
+			text "entries: "
+			border 
+				vstack
+					for e in state.entries
+						if loop == state.current
+							text "[x] " loop ".: " e
+						else 
+							text "[ ] " loop ".: " e
+
+
+
