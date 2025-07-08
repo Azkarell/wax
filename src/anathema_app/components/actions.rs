@@ -2,7 +2,7 @@ use std::{path::PathBuf, str::FromStr};
 
 use anathema::state::List;
 
-use crate::components::ModelPickerState;
+use crate::anathema_app::components::ModelPickerState;
 
 fn decrement_wrapped(current: &mut usize, max_len: usize) {
     *current += 1;

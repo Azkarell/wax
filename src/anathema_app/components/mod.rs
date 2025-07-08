@@ -8,7 +8,7 @@ use anathema::{
     state::{List, State, Value},
 };
 
-use crate::{
+use crate::anathema_app::{
     action_map::{ActionKey, ActionMap},
     components::actions::{down, get_entries_as_string, select, up},
 };

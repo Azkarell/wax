@@ -1,61 +1,53 @@
-mod action_map;
-mod components;
-
-use anathema::{
-    component::{self, Event, KeyCode, KeyEvent, KeyState},
-    prelude::{Document, TuiBackend},
-    widgets::{components::deferred::DeferredComponents, tabindex::TabIndex},
+use std::{
+    io::{BufReader, Read, Write, stdout},
+    path::PathBuf,
 };
-use components::input::{Input, InputState};
 
-use crate::components::{ModelPicker, ModelPickerState};
+use candle_core::Tensor;
+use candle_transformers::models::mimi::candle_nn::var_builder;
+use clap::{Parser, Subcommand};
+use clio::{Input, Output};
 
-fn quit_event_handler(
-    ev: Event,
-    _tab_index: &mut TabIndex,
-    _components: &mut DeferredComponents,
-) -> Option<Event> {
-    _components.by_name("input")
-    match ev {
-        Event::Key(KeyEvent {
-            code: KeyCode::Char('q'),
-            ctrl: false,
-            state: KeyState::Press,
-        }) => Some(Event::Stop),
-        _ => Some(ev),
-    }
+mod anathema_app;
+#[derive(Parser, Debug)]
+#[command(version, about)]
+#[command(propagate_version = true)]
+struct Args {
+    #[arg(short, long, value_parser, default_value = "-")]
+    input: Input,
+    #[arg(short, long, value_parser, default_value = "-")]
+    output: Output,
+    #[arg(short, long)]
+    model: PathBuf,
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    Chat {
+        #[arg(short('p'), long, default_value = "\n>>:")]
+        custom_prompt: String,
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // let device = Device::Cpu;
-    let document = Document::new("@index");
-    let mut backend = TuiBackend::builder()
-        .enable_alt_screen()
-        .enable_raw_mode()
-        .hide_cursor()
-        .clear()
-        .finish()
-        .unwrap();
+    let args = Args::parse();
 
-    let mut builder = anathema::prelude::Runtime::builder(document, &backend)
-        .with_global_event_handler(quit_event_handler);
+    let device = candle_core::Device::Cpu;
 
-    // let mut container = get_gguf_container("");
-    builder
-        .default::<()>("index", "templates/index.aml")
-        .unwrap();
-    builder
-        .component(
-            "model_picker",
-            "templates/model_picker.aml",
-            ModelPicker::default(),
-            ModelPickerState::new()?,
-        )
-        .unwrap();
+    let mut file = BufReader::new(std::fs::File::open(args.model)?);
 
-    builder.prototype("input", "templates/input.aml", Input::new, InputState::new)?;
-    builder
-        .finish(&mut backend, |mut rt, backend| rt.run(backend))
-        .unwrap();
+    let content = candle_core::quantized::gguf_file::Content::read(&mut file)?;
+
+    let mut tensors = Vec::with_capacity(content.tensor_infos.len());
+    for (n, i) in &content.tensor_infos {
+        let n_t = content.tensor(&mut file, n, &device)?;
+        tensors.push(n_t)
+    }
+    for (k, v) in &content.metadata {
+        println!("{k},{v:?}");
+    }
+    stdout().flush()?;
     Ok(())
 }

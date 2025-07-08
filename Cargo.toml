@@ -6,4 +6,8 @@ edition = "2024"
 [dependencies]
 anathema = "0.2.7"
 candle-core = {version = "*"}
+candle-transformers = { version = "0.9.1", features = []} 
+clap = { version = "4.5.40", features = ["derive"] }
+clio = { version = "0.3.5", features = ["clap-parse", "pipe"] }
 gguf-rs = "0.1.4"
+wild = "2.2.1"
